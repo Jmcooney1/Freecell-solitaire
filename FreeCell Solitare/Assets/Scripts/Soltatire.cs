@@ -9,6 +9,8 @@ public class Soltatire : MonoBehaviour
 {
     SpriteRenderer spriteRenderer;
     public Sprite[] cardFaces;
+
+    bool isFaceUp = false;
     public GameObject cardPrefab;
     public Sprite emptyPosition;
     public string[] suits = { "H", "D", "C", "S"};
@@ -24,6 +26,8 @@ public class Soltatire : MonoBehaviour
     List<string>[] foundations;
 
     List<string>[] tableaus;
+
+    List<string>[] freecells;
 
     public List<string> foundation0 = new List<string>();
 
@@ -44,6 +48,12 @@ public class Soltatire : MonoBehaviour
 
     public List<string> tableu7 = new List<string>();
 
+    public List<string> freeCell1 = new List<string>();
+
+    public List<string> freeCell2 = new List<string>();
+    public List<string> freeCell3 = new List<string>();
+    public List<string> freeCell4 = new List<string>();
+
 
 
 
@@ -57,6 +67,7 @@ public class Soltatire : MonoBehaviour
         Debug.Log("Starting Solitaire");
         tableaus = new List<string>[] { tableu0, tableu1, tableu2, tableu3, tableu4, tableu5, tableu6, tableu7};
         foundations = new List<string>[] { foundation0, foundation1, foundation2, foundation3 };
+        freecells = new List<string>[]{freeCell1, freeCell2, freeCell3, freeCell4};
         PlayGame();
     }
 
@@ -78,6 +89,7 @@ public class Soltatire : MonoBehaviour
         foreach(string suit in suits){
             foreach (string rank in ranks){
                 newDeck.Add(suit + rank);
+                newDeck = newDeck.OrderBy(x => random.Next()).ToList();
             }
         }
 
@@ -112,19 +124,20 @@ public class Soltatire : MonoBehaviour
             {
                 Debug.Log("Dealing card " + card + " to tableau " + index);
                 // create card
-                CreateCard(card, currentPosition, tabPosition.transform);
+                CreateCard(card, currentPosition, tabPosition.transform, isFaceUp);
                 currentPosition += cardOffset;
             }
         }
     }
 
-    void CreateCard(string cardName, Vector3 position, Transform parent)
+    void CreateCard(string cardName, Vector3 position, Transform parent, bool isFaceUp)
     {
         Debug.Log("Creating card: " + cardName);
         GameObject newCard = Instantiate(cardPrefab, position, Quaternion.identity, parent);
         newCard.name = cardName;
         Debug.Log("Card sprite name: " + newCard.name);
-        newCard.GetComponent<CardHandler>().cardFront = cardFaces.First(s => s.name.Remove(s.name.Length-2) == newCard.name);
+        newCard.GetComponent<CardHandler>().cardFront = cardFaces.First(s => s.name.Remove(s.name.Length - 2) == newCard.name);
+        newCard.GetComponent<CardHandler>().isFaceUp = true;
     }
     
 
@@ -133,24 +146,24 @@ public class Soltatire : MonoBehaviour
         if (fromLocation == null || toLocation == null || fromLocation == toLocation) return false;
         ResolveTarget(toLocation, out GameObject clickedTag, out int foundationIndex, out int tabIndex);
         // waste -> tab/foundation
-        if (fromLocation.transform.parent.CompareTag("Waste"))
+        if (fromLocation.transform.parent.CompareTag("FreeCell"))
         {
-            if (clickedTag.transform.CompareTag("Tableau") && tabIndex >= 0)
+            if (clickedTag.transform.CompareTag("Tab") && tabIndex >= 0)
             {
-                Debug.Log("moving from waste to tab: " + CanPlaceOnTableau(fromLocation.name, tabIndex));
+                Debug.Log("moving from Freecell to tab: " + CanPlaceOnTableau(fromLocation.name, tabIndex));
                 return CanPlaceOnTableau(fromLocation.name, tabIndex);
             }
             if (clickedTag.transform.CompareTag("Foundation") && foundationIndex >= 0)
             {
-                Debug.Log("moving from waste to foundation: " + CanPlaceOnFoundation(fromLocation.name, foundationIndex));
+                Debug.Log("moving from FreeCell to foundation: " + CanPlaceOnFoundation(fromLocation.name, foundationIndex));
                 return CanPlaceOnFoundation(fromLocation.name, foundationIndex);
             }
         }
 
         // tab -> tab/foundation
-        if (fromLocation.transform.parent.CompareTag("Tableau"))
+        if (fromLocation.transform.parent.CompareTag("Tab"))
         {
-            if (clickedTag.transform.CompareTag("Tableau") && tabIndex >= 0)
+            if (clickedTag.transform.CompareTag("Tab") && tabIndex >= 0)
             {
                 Debug.Log("moving from tab to tab: " + CanPlaceOnTableau(fromLocation.name, tabIndex));
                 return CanPlaceOnTableau(fromLocation.name, tabIndex);
@@ -169,7 +182,7 @@ public class Soltatire : MonoBehaviour
         // foundation -> tab
         if (fromLocation.transform.parent.CompareTag("Foundation"))
         {
-            if (clickedTag.transform.CompareTag("Tableau") && tabIndex >= 0)
+            if (clickedTag.transform.CompareTag("Tab") && tabIndex >= 0)
             {
                 Debug.Log("moving from foundation to tab: " + CanPlaceOnTableau(fromLocation.name, tabIndex));
                 return CanPlaceOnTableau(fromLocation.name, tabIndex);
@@ -186,7 +199,7 @@ public class Soltatire : MonoBehaviour
         int cardsToMoveCount = 1;
         GameObject originalParent = fromLocation.transform.parent.gameObject;
         // if coming from tab, need to remove card and all cards on top of it from their original tab
-        if (fromLocation.transform.parent.CompareTag("Tableau"))
+        if (fromLocation.transform.parent.CompareTag("Tab"))
         {
             foreach(List<string> tableau in tableaus)
             {
@@ -216,7 +229,7 @@ public class Soltatire : MonoBehaviour
         
 
         // if moving to tab, add the card to the correct tab
-        if (clickedTag.transform.CompareTag("Tableau"))
+        if (clickedTag.transform.CompareTag("Tab"))
         {
             // add it to the right tab
             int tableauIndex = System.Array.IndexOf(tableauPositions, clickedTag.transform.gameObject);
@@ -361,7 +374,7 @@ public class Soltatire : MonoBehaviour
         {
             foundationIndex = System.Array.IndexOf(foundationPositions, clickedTag);
         }
-        if (clickedTag.transform.CompareTag("Tableau"))
+        if (clickedTag.transform.CompareTag("Tab"))
         {
             tabIndex = System.Array.IndexOf(tableauPositions, clickedTag);
         }

@@ -8,6 +8,8 @@ TagManager:
   - Tab
   - Foundation
   - FreeCell
+  - Card
+  - background
   layers:
   - Default
   - TransparentFX
